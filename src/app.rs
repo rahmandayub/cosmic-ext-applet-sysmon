@@ -47,6 +47,8 @@ pub enum Message {
     SelectNetworkInterface(Option<String>),
     /// The user changed the refresh interval via the slider.
     SetRefreshInterval(f32),
+    /// The user changed a threshold slider.
+    SetThreshold(ThresholdMetric, ThresholdLevel, f32),
     UpdateConfig(Config),
 }
 
@@ -57,6 +59,19 @@ pub enum Metric {
     Memory,
     Gpu,
     Network,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ThresholdMetric {
+    Cpu,
+    Memory,
+    Gpu,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ThresholdLevel {
+    Warning,
+    Critical,
 }
 
 /// Create a COSMIC application from the app model
@@ -296,6 +311,22 @@ impl cosmic::Application for AppModel {
                         MAX_REFRESH_INTERVAL_MS as f32,
                     ) as u64;
                 new.refresh_interval_ms = v;
+                if let Ok(context) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
+                    let _ = new.write_entry(&context);
+                }
+                self.config = new;
+            }
+            Message::SetThreshold(metric, level, value) => {
+                let mut new = self.config.clone();
+                let v = value.clamp(0.0, 100.0);
+                match (metric, level) {
+                    (ThresholdMetric::Cpu, ThresholdLevel::Warning) => new.cpu_warning_threshold = v,
+                    (ThresholdMetric::Cpu, ThresholdLevel::Critical) => new.cpu_critical_threshold = v,
+                    (ThresholdMetric::Memory, ThresholdLevel::Warning) => new.ram_warning_threshold = v,
+                    (ThresholdMetric::Memory, ThresholdLevel::Critical) => new.ram_critical_threshold = v,
+                    (ThresholdMetric::Gpu, ThresholdLevel::Warning) => new.gpu_warning_threshold = v,
+                    (ThresholdMetric::Gpu, ThresholdLevel::Critical) => new.gpu_critical_threshold = v,
+                }
                 if let Ok(context) = cosmic_config::Config::new(Self::APP_ID, Config::VERSION) {
                     let _ = new.write_entry(&context);
                 }
