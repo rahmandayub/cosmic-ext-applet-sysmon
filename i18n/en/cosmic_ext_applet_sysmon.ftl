@@ -7,3 +7,6 @@ show-gpu = Show GPU
 show-network = Show Network
 network-interface = Network interface
 auto = Auto (primary)
+threshold-settings = Threshold Settings
+warning = Warning
+critical = Critical
