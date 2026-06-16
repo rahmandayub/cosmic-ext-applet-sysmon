@@ -231,7 +231,7 @@ impl cosmic::Application for AppModel {
             self.config.cpu_warning_threshold,
             move |v| Message::SetThreshold(ThresholdMetric::Cpu, ThresholdLevel::Warning, v),
         );
-        let cpu_warning_label = format!("CPU {}%: {:.0}%", fl!("warning"), self.config.cpu_warning_threshold);
+        let cpu_warning_label = format!("CPU {}: {:.0}%", fl!("warning"), self.config.cpu_warning_threshold);
         list = list.add(widget::settings::item(cpu_warning_label, cpu_warning_slider));
 
         let cpu_critical_slider = widget::slider(
@@ -239,7 +239,7 @@ impl cosmic::Application for AppModel {
             self.config.cpu_critical_threshold,
             move |v| Message::SetThreshold(ThresholdMetric::Cpu, ThresholdLevel::Critical, v),
         );
-        let cpu_critical_label = format!("CPU {}%: {:.0}%", fl!("critical"), self.config.cpu_critical_threshold);
+        let cpu_critical_label = format!("CPU {}: {:.0}%", fl!("critical"), self.config.cpu_critical_threshold);
         list = list.add(widget::settings::item(cpu_critical_label, cpu_critical_slider));
 
         // RAM thresholds
@@ -248,7 +248,7 @@ impl cosmic::Application for AppModel {
             self.config.ram_warning_threshold,
             move |v| Message::SetThreshold(ThresholdMetric::Memory, ThresholdLevel::Warning, v),
         );
-        let ram_warning_label = format!("RAM {}%: {:.0}%", fl!("warning"), self.config.ram_warning_threshold);
+        let ram_warning_label = format!("RAM {}: {:.0}%", fl!("warning"), self.config.ram_warning_threshold);
         list = list.add(widget::settings::item(ram_warning_label, ram_warning_slider));
 
         let ram_critical_slider = widget::slider(
@@ -256,7 +256,7 @@ impl cosmic::Application for AppModel {
             self.config.ram_critical_threshold,
             move |v| Message::SetThreshold(ThresholdMetric::Memory, ThresholdLevel::Critical, v),
         );
-        let ram_critical_label = format!("RAM {}%: {:.0}%", fl!("critical"), self.config.ram_critical_threshold);
+        let ram_critical_label = format!("RAM {}: {:.0}%", fl!("critical"), self.config.ram_critical_threshold);
         list = list.add(widget::settings::item(ram_critical_label, ram_critical_slider));
 
         // GPU thresholds (only if GPU is present)
@@ -266,7 +266,7 @@ impl cosmic::Application for AppModel {
                 self.config.gpu_warning_threshold,
                 move |v| Message::SetThreshold(ThresholdMetric::Gpu, ThresholdLevel::Warning, v),
             );
-            let gpu_warning_label = format!("GPU {}%: {:.0}%", fl!("warning"), self.config.gpu_warning_threshold);
+            let gpu_warning_label = format!("GPU {}: {:.0}%", fl!("warning"), self.config.gpu_warning_threshold);
             list = list.add(widget::settings::item(gpu_warning_label, gpu_warning_slider));
 
             let gpu_critical_slider = widget::slider(
@@ -274,7 +274,7 @@ impl cosmic::Application for AppModel {
                 self.config.gpu_critical_threshold,
                 move |v| Message::SetThreshold(ThresholdMetric::Gpu, ThresholdLevel::Critical, v),
             );
-            let gpu_critical_label = format!("GPU {}%: {:.0}%", fl!("critical"), self.config.gpu_critical_threshold);
+            let gpu_critical_label = format!("GPU {}: {:.0}%", fl!("critical"), self.config.gpu_critical_threshold);
             list = list.add(widget::settings::item(gpu_critical_label, gpu_critical_slider));
         }
 
