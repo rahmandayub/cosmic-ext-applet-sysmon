@@ -504,7 +504,7 @@ fn build_panel_rich_text(s: &SensorsSnapshot, cfg: &Config) -> Option<Element<'s
         let tx = fmt::format_bytes_per_sec(s.net_tx_bps);
         let iface = s.net_interface.as_deref().unwrap_or("?");
         
-        spans.push(Span::new(format!(" {iface}")).color(color::NET_RX_COLOR));
+        spans.push(Span::new(format!(" {iface}")));
         spans.push(Span::new(format!(" ↓{rx}")).color(color::NET_RX_COLOR));
         spans.push(Span::new(format!(" ↑{tx}")).color(color::NET_TX_COLOR));
     }
