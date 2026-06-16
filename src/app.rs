@@ -505,8 +505,10 @@ fn build_panel_rich_text(s: &SensorsSnapshot, cfg: &Config) -> Option<Element<'s
         let iface = s.net_interface.as_deref().unwrap_or("?");
         
         spans.push(Span::new(format!(" {iface}")));
-        spans.push(Span::new(format!(" ↓{rx}")).color(color::NET_RX_COLOR));
-        spans.push(Span::new(format!(" ↑{tx}")).color(color::NET_TX_COLOR));
+        spans.push(Span::new(" ↓").color(color::NET_RX_COLOR));
+        spans.push(Span::new(rx));
+        spans.push(Span::new(" ↑").color(color::NET_TX_COLOR));
+        spans.push(Span::new(tx));
     }
 
     if spans.is_empty() {
