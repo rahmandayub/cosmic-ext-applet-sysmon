@@ -1,0 +1,14 @@
+[Desktop Entry]
+Name=Cosmic Sysmon
+Comment=Monitor CPU, RAM, GPU and network speeds
+Type=Application
+Icon=com.github.rahmandayub.Sysmon
+Exec=cosmic-ext-applet-sysmon %F
+Terminal=false
+StartupNotify=true
+Categories=COSMIC
+Keywords=COSMIC;system;monitor;cpu;gpu;ram;network;speed
+NoDisplay=true
+X-CosmicApplet=true
+X-CosmicHoverPopup=Auto
+MimeType=

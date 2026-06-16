@@ -1,0 +1,43 @@
+[package]
+name = "cosmic-ext-applet-sysmon"
+version = "0.1.0"
+edition = "2024"
+license = "MPL-2.0"
+description = "Monitor CPU, RAM, GPU and network speeds from the COSMIC panel"
+repository = "https://github.com/rahmandayub/cosmic-ext-applet-sysmon"
+
+[dependencies]
+i18n-embed-fl = "0.10"
+rust-embed = "8.11"
+tokio = { version = "1.52.0", features = ["full"] }
+
+[dependencies.i18n-embed]
+version = "0.16"
+features = ["fluent-system", "desktop-requester"]
+
+[dependencies.libcosmic]
+git = "https://github.com/pop-os/libcosmic.git"
+features = [
+    "applet",
+    "applet-token",
+    "dbus-config",
+    "multi-window",
+    "tokio",
+    "wayland",
+    "winit",
+]
+
+[dependencies.sysinfo]
+version = "0.39"
+default-features = false
+features = ["network", "system"]
+
+[dependencies.nvml-wrapper]
+version = "0.12"
+default-features = false
+
+# Uncomment to test a locally-cloned libcosmic
+# [patch.'https://github.com/pop-os/libcosmic']
+# libcosmic = { path = "../libcosmic" }
+# cosmic-config = { path = "../libcosmic/cosmic-config" }
+# cosmic-theme = { path = "../libcosmic/cosmic-theme" }

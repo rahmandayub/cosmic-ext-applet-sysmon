@@ -1,0 +1,9 @@
+app-title = Cosmic Sysmon
+about = About
+view = View
+show-cpu = Show CPU
+show-memory = Show Memory
+show-gpu = Show GPU
+show-network = Show Network
+network-interface = Network interface
+auto = Auto (primary)
