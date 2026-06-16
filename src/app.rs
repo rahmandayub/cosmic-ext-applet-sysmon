@@ -10,11 +10,13 @@ use crate::format as fmt;
 use crate::sensors::{Sensors, SensorsSnapshot};
 
 use cosmic::cosmic_config::{self, CosmicConfigEntry};
-use cosmic::iced::core::text::Wrapping;
+
 use cosmic::iced::platform_specific::shell::wayland::commands::popup::{destroy_popup, get_popup};
 use cosmic::iced::{time, window::Id, Alignment, Limits, Subscription};
 use cosmic::prelude::*;
 use cosmic::widget;
+use cosmic::iced::widget::text::Span;
+use crate::color;
 
 /// The application model stores app-specific state used to describe its interface and
 /// drive its logic.
@@ -127,32 +129,16 @@ impl cosmic::Application for AppModel {
     /// Panel view: a single line with the requested metrics, clickable to
     /// open the popup.
     fn view(&self) -> Element<'_, Self::Message> {
-        let line = build_panel_line(&self.snapshot, &self.config);
-        // `Wrapping::None` keeps the metrics on one line and lets the applet
-        // grow horizontally with its content. The whole content is wrapped in
-        // `self.core.applet.autosize_window(...)` so the applet window itself
-        // resizes to fit the text + icon instead of staying at icon-width
-        // (which was the default initial size in the applet's window
-        // settings).
-        let text = widget::text(line)
-            .wrapping(Wrapping::None)
-            .shaping(cosmic::iced::core::text::Shaping::Advanced);
+        let content = build_panel_rich_text(&self.snapshot, &self.config)
+            .unwrap_or_else(|| widget::text("Sysmon (no metrics)").into());
 
-        // The container fixes the content to the applet slot height (the
-        // panel's `panel_h`) and centers it. Without this, the autosize
-        // widget would treat the content's height as 0 and the applet
-        // would collapse vertically.
         let (_, panel_h) = self.core.applet.suggested_window_size();
-        let applet_icon = widget::container(text)
+        let applet_icon = widget::container(content)
             .height(cosmic::iced::Length::Fixed(panel_h.get() as f32))
             .padding([0.0, 12.0])
             .align_x(Alignment::Center)
             .align_y(Alignment::Center);
 
-        // `autosize_window` wraps the content in an autosize container that
-        // resizes the applet window to fit it. This is what makes the
-        // applet width adapt to the text content instead of staying at
-        // icon-width.
         widget::button::custom(self.core.applet.autosize_window(applet_icon))
             .on_press(Message::TogglePopup)
             .class(cosmic::theme::Button::AppletIcon)
@@ -386,45 +372,98 @@ impl Default for AppModel {
 }
 
 /// Build the single-line text shown in the panel.
-fn build_panel_line(s: &SensorsSnapshot, cfg: &Config) -> String {
-    let mut parts: Vec<String> = Vec::new();
+fn build_panel_rich_text(s: &SensorsSnapshot, cfg: &Config) -> Option<Element<'static, Message>> {
+    let mut spans: Vec<Span<'static, Message>> = Vec::new();
 
     if cfg.show_cpu {
-        parts.push(format!("CPU {}", fmt::format_percent(s.cpu_percent)));
+        let cpu_color = color::CPU_COLOR;
+        spans.push(Span::new("CPU").color(cpu_color));
+        
+        let cpu_pct = fmt::format_percent(s.cpu_percent);
+        let value_color = color::threshold_color(
+            s.cpu_percent,
+            cfg.cpu_warning_threshold,
+            cfg.cpu_critical_threshold,
+        );
+        if let Some(c) = value_color {
+            spans.push(Span::new(format!(" {cpu_pct}")).color(c));
+        } else {
+            spans.push(Span::new(format!(" {cpu_pct}")));
+        }
+        spans.push(Span::new(" | "));
     }
+
     if cfg.show_memory {
+        let ram_color = color::RAM_COLOR;
+        spans.push(Span::new("RAM").color(ram_color));
+        
         let used = fmt::format_bytes(s.memory_used);
         let total = fmt::format_bytes(s.memory_total);
-        parts.push(format!("RAM {used}/{total}"));
-    }
-    if cfg.show_gpu && s.gpu_present {
-        let mut gpu_line = String::from("GPU");
-        if let Some(p) = s.gpu_percent {
-            gpu_line.push_str(&format!(" {}", fmt::format_percent(p)));
+        let ram_pct = (s.memory_used as f32 / s.memory_total as f32) * 100.0;
+        let value_color = color::threshold_color(
+            ram_pct,
+            cfg.ram_warning_threshold,
+            cfg.ram_critical_threshold,
+        );
+        if let Some(c) = value_color {
+            spans.push(Span::new(format!(" {used}/{total}")).color(c));
+        } else {
+            spans.push(Span::new(format!(" {used}/{total}")));
         }
-        if let (Some(used), Some(total)) = (s.gpu_vram_used, s.gpu_vram_total) {
-            gpu_line.push_str(&format!(" | {}", fmt::format_bytes(used)));
-            if total > 0 {
-                gpu_line.push_str(&format!("/{}", fmt::format_bytes(total)));
+        spans.push(Span::new(" | "));
+    }
+
+    if cfg.show_gpu && s.gpu_present {
+        let gpu_color = color::GPU_COLOR;
+        spans.push(Span::new("GPU").color(gpu_color));
+        
+        if let Some(p) = s.gpu_percent {
+            let value_color = color::threshold_color(
+                p,
+                cfg.gpu_warning_threshold,
+                cfg.gpu_critical_threshold,
+            );
+            if let Some(c) = value_color {
+                spans.push(Span::new(format!(" {p:.0}%")).color(c));
+            } else {
+                spans.push(Span::new(format!(" {p:.0}%")));
             }
         }
-        if let Some(t) = s.gpu_temp_c {
-            gpu_line.push_str(&format!(" {}", fmt::format_temp(t)));
+        if let (Some(used), Some(total)) = (s.gpu_vram_used, s.gpu_vram_total) {
+            let vram_str = format!(" | {}/{}", fmt::format_bytes(used), fmt::format_bytes(total));
+            spans.push(Span::new(vram_str));
         }
-        parts.push(gpu_line);
+        if let Some(t) = s.gpu_temp_c {
+            spans.push(Span::new(format!(" {}", fmt::format_temp(t))));
+        }
+        spans.push(Span::new(" | "));
     }
+
     if cfg.show_network {
+        let net_color = color::NET_COLOR;
+        spans.push(Span::new("NET").color(net_color));
+        
         let rx = fmt::format_bytes_per_sec(s.net_rx_bps);
         let tx = fmt::format_bytes_per_sec(s.net_tx_bps);
         let iface = s.net_interface.as_deref().unwrap_or("?");
-        parts.push(format!("{iface} ↓{rx} ↑{tx}"));
+        
+        spans.push(Span::new(format!(" {iface}")).color(color::NET_RX_COLOR));
+        spans.push(Span::new(format!(" ↓{rx}")).color(color::NET_RX_COLOR));
+        spans.push(Span::new(format!(" ↑{tx}")).color(color::NET_TX_COLOR));
     }
 
-    if parts.is_empty() {
-        "Sysmon (no metrics)".to_string()
-    } else {
-        parts.join(" | ")
+    if spans.is_empty() {
+        return None;
     }
+
+    // Remove trailing " | "
+    if let Some(last) = spans.last() {
+        if last.text == " | " {
+            spans.pop();
+        }
+    }
+
+    Some(cosmic::iced::widget::rich_text(spans).into())
 }
 
 /// Helper to build a `settings::item` row that has a toggler on the right.
